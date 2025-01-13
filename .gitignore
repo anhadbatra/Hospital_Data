@@ -1,2 +1,5 @@
 extract.py
 .venv
+.env
+.vscode
+__pycache__
