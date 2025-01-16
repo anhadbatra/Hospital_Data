@@ -3,11 +3,23 @@ import sqlalchemy as sa
 from sqlalchemy.engine.url import URL
 import os 
 AIRFLOW_HOME = os.environ.get('AIRFLOW_HOME')
+AWS_S3_BUCKET = os.environ.get('AWS_S3_BUCKET')
 
 def extract_data():
     df = pd.read_csv(AIRFLOW_HOME + 'dags/odhf_bdoes_v1.csv',encoding='unicode_escape')
     df.dropna(subset=['street_name','source_format_str_address','CSDuid','latitude','longitude'], inplace=True)
     df['index'] = range(len(df))
+    df.to_csv(
+    f"s3://{AWS_S3_BUCKET}/Cleaned_data.csv",
+    index=False,
+    storage_options={
+        "key": os.environ.get('AWS_ACCESS_KEY_ID'),
+        "secret": os.environ.get('AWS_SECRET_ACCESS_KEY'),
+        }
+)
+
+
+def redshift_data():
     url = URL.create(
     drivername='redshift+redshift_connector', 
     host='default-workgroup.058264275627.us-east-1.redshift-serverless.amazonaws.com', 
@@ -40,12 +52,6 @@ def extract_data():
 );
 """
 
-    with  engine.connect() as connection:
-        connection.execute(f"TRUNCATE TABLE {table_name}")
+    with engine.connect() as connection:
         connection.execute(create_table_query)
-    df.to_sql(table_name, engine, if_exists='append', index=False)
-
-
-
-def analyze_data():
-    print("Data has been analyzed")
+        connection.execute(f"TRUNCATE TABLE {table_name}")
