@@ -55,3 +55,4 @@ def redshift_data():
     with engine.connect() as connection:
         connection.execute(create_table_query)
         connection.execute(f"TRUNCATE TABLE {table_name}")
+        connection.execute(f"COPY {table_name} FROM 's3://{AWS_S3_BUCKET}/Cleaned_data.csv' IAM_ROLE 'arn:aws:iam::058264275627:role/service-role/AmazonRedshiftServiceRoleDefault' CSV IGNOREHEADER 1;")
